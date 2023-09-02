@@ -8,6 +8,7 @@ if (PROJECT_IS_TOP_LEVEL)
 	endif() 
 	
 	add_subdirectory(examples)
+  add_subdirectory(tests)
 endif()
 
 add_library(hamt INTERFACE)

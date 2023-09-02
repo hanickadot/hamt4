@@ -1,6 +1,7 @@
 #ifndef HAMT_HAMT_HPP
 #define HAMT_HAMT_HPP
 
+#include "utility/bitmap.hpp"
 #include <bit>
 #include <functional>
 #include <iostream>
@@ -79,44 +80,6 @@ template <typename HashT = uint32_t, unsigned Bits = 5> struct basic_hash_pieces
 	}
 };
 
-template <unsigned Bits> struct bits_to_bitmap;
-
-template <> struct bits_to_bitmap<3> {
-	using type = uint8_t;
-};
-
-template <> struct bits_to_bitmap<4> {
-	using type = uint16_t;
-};
-
-template <> struct bits_to_bitmap<5> {
-	using type = uint32_t;
-};
-
-template <> struct bits_to_bitmap<6> {
-	using type = uint64_t;
-};
-
-template <unsigned Bits> using bits_to_bitmap_t = typename bits_to_bitmap<Bits>::value;
-
-template <typename BitmapT = uint32_t> struct basic_bitmap_view {
-	BitmapT value{};
-
-	constexpr basic_bitmap_view() noexcept = default;
-	constexpr explicit basic_bitmap_view(BitmapT v) noexcept: value{v} { }
-
-	struct record_info {
-		unsigned position;
-		bool exists;
-	};
-
-	constexpr auto operator[](unsigned index) const noexcept -> record_info {
-		const auto bit = BitmapT{1u << index};
-		const auto mask = bit - 1u;
-		return {.position = static_cast<unsigned>(std::popcount(value & mask)), .exists = static_cast<bool>(value & bit)};
-	}
-};
-
 template <typename T, typename Hash = transparent_hash, typename EqualityCompare = std::equal_to<void>> struct set {
 	template <bool Const> struct basic_iterator {
 		using value_type = conditionaly_add_const<Const, T>;
@@ -138,7 +101,7 @@ template <typename T, typename Hash = transparent_hash, typename EqualityCompare
 	};
 
 	using hash_pieces = basic_hash_pieces<uint32_t, 5>;
-	using bitmap_view = basic_bitmap_view<uint32_t>;
+	using bitmap_view = internal::basic_bitmap_view<uint32_t>;
 
 	using iterator = basic_iterator<false>;
 	using const_iterator = basic_iterator<true>;
