@@ -1,7 +1,6 @@
 #ifndef HAMT_UTILITY_BITMAP_HPP
 #define HAMT_UTILITY_BITMAP_HPP
 
-#include "assert.hpp"
 #include <bit>
 #include <cassert>
 #include <concepts>
@@ -45,7 +44,7 @@ template <typename T = uint32_t> struct basic_bitmap_view {
 	constexpr basic_bitmap_view(std::same_as<value_type> auto v) noexcept: value{v} { }
 
 	constexpr auto operator[](unsigned index) const noexcept -> record_info {
-		HAMT_ASSERT(index < bits_available);
+		assert(index < bits_available);
 
 		const auto bit = T{1u << index};
 		const auto mask = bit - 1u;

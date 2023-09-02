@@ -3,10 +3,12 @@
 
 // I have my own assert because cassert's assert is messing with code coverage report.
 
+#undef assert
+
 #ifndef NDEBUG
-#define HAMT_ASSERT(e) hamt::internal::assert_this(static_cast<bool>(e), #e, __FILE__, __LINE__);
+#define assert(e) hamt::internal::assert_this(static_cast<bool>(e), #e, __FILE__, __LINE__);
 #else
-#define HAMT_ASSERT(e) ((void)(0))
+#define assert(e) ((void)(0))
 #endif
 
 #include <cstdio>

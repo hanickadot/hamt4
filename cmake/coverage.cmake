@@ -15,6 +15,9 @@ message(STATUS "Code coverage report is enabled.")
 add_compile_options("-fprofile-instr-generate" "-fcoverage-mapping" "-g" "-ffile-prefix-map=${CMAKE_SOURCE_DIR}/=/")
 add_link_options("-fprofile-instr-generate" "-fcoverage-mapping")
 
+# this is a trick to use my own assert() instead problematic system's
+add_compile_options(-isystem ${CMAKE_CURRENT_SOURCE_DIR}/cmake/polyfill)
+
 function(add_coverage TARGET_NAME)
 	set(INDEX_DIR "${CMAKE_BINARY_DIR}/report-coverage-${TARGET_NAME}")
 	set(INDEX_HTML "${INDEX_DIR}/index.html")
