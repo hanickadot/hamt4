@@ -1,12 +1,17 @@
 #ifndef HAMT_HAMT_HPP
 #define HAMT_HAMT_HPP
 
+#include <bit>
 #include <functional>
+#include <iostream>
 #include <utility>
 #include <concepts>
 #include <cstddef>
 
 namespace hamt {
+
+// iterator's sentinel
+struct sentinel { };
 
 struct node_handler {
 	std::byte * pointer{nullptr};
@@ -42,37 +47,131 @@ template <typename K, typename T, typename EqualityCompare, typename Hash> conce
 struct transparent_hash {
 	using is_transparent = void;
 
-	template <typename T> constexpr bool operator()(const T & item) noexcept(noexcept(std::hash<T>{}(item))) {
+	template <typename T> constexpr auto operator()(const T & item) noexcept(noexcept(std::hash<T>{}(item))) {
 		return std::hash<T>{}(item);
 	}
 };
 
-template <typename T, typename Hash = transparent_hash, typename EqualityCompare = std::equal_to<void>> struct set {
-	struct sentinel { };
-	struct iterator {
-		T * ptr;
+template <bool Value, typename T> using conditionaly_add_const = std::conditional_t<Value, const T, T>;
 
-		friend constexpr bool operator==(const iterator &, sentinel) {
+template <typename HashT = uint32_t, unsigned Bits = 5> struct basic_hash_pieces {
+	static_assert(Bits <= 8u);
+	static_assert(Bits > 0u);
+
+	HashT value;
+	int8_t remaining_bits = sizeof(HashT) * 8;
+
+	static constexpr auto mask = HashT{(0b1ull << Bits) - 1ull}; // mask with Bits count of 1s
+
+	explicit constexpr basic_hash_pieces(size_t h) noexcept: value{static_cast<HashT>(h)} { }
+	constexpr basic_hash_pieces(HashT v, int8_t rem) noexcept: value{v}, remaining_bits{rem} { }
+
+	constexpr unsigned front() const noexcept {
+		return static_cast<unsigned>(value & mask);
+	}
+
+	constexpr basic_hash_pieces pop() const noexcept {
+		return {(value >> Bits), static_cast<int8_t>(remaining_bits - Bits)};
+	}
+
+	explicit constexpr operator bool() const noexcept {
+		return remaining_bits > 0;
+	}
+};
+
+template <unsigned Bits> struct bits_to_bitmap;
+
+template <> struct bits_to_bitmap<3> {
+	using type = uint8_t;
+};
+
+template <> struct bits_to_bitmap<4> {
+	using type = uint16_t;
+};
+
+template <> struct bits_to_bitmap<5> {
+	using type = uint32_t;
+};
+
+template <> struct bits_to_bitmap<6> {
+	using type = uint64_t;
+};
+
+template <unsigned Bits> using bits_to_bitmap_t = typename bits_to_bitmap<Bits>::value;
+
+template <typename BitmapT = uint32_t> struct basic_bitmap_view {
+	BitmapT value{};
+
+	constexpr basic_bitmap_view() noexcept = default;
+	constexpr explicit basic_bitmap_view(BitmapT v) noexcept: value{v} { }
+
+	struct record_info {
+		unsigned position;
+		bool exists;
+	};
+
+	constexpr auto operator[](unsigned index) const noexcept -> record_info {
+		const auto bit = BitmapT{1u << index};
+		const auto mask = bit - 1u;
+		return {.position = static_cast<unsigned>(std::popcount(value & mask)), .exists = static_cast<bool>(value & bit)};
+	}
+};
+
+template <typename T, typename Hash = transparent_hash, typename EqualityCompare = std::equal_to<void>> struct set {
+	template <bool Const> struct basic_iterator {
+		using value_type = conditionaly_add_const<Const, T>;
+		using reference_type = value_type &;
+
+		value_type * ptr;
+
+		friend constexpr bool operator==(const basic_iterator &, sentinel) {
 			return true;
 		}
 
-		constexpr iterator & operator++() noexcept {
+		constexpr basic_iterator & operator++() noexcept {
 			return *this;
 		}
 
-		constexpr const T & operator*() noexcept {
+		constexpr reference_type operator*() noexcept {
 			return *ptr;
 		}
 	};
-	struct const_iterator { };
+
+	using hash_pieces = basic_hash_pieces<uint32_t, 5>;
+	using bitmap_view = basic_bitmap_view<uint32_t>;
+
+	using iterator = basic_iterator<false>;
+	using const_iterator = basic_iterator<true>;
+
+	[[no_unique_address]] Hash hasher{};
+	[[no_unique_address]] EqualityCompare comparator{};
 
 	template <typename... Args> constexpr iterator emplace(Args &&... args) requires std::constructible_from<T, Args...> {
 		[[maybe_unused]] const auto obj = T(std::forward<Args>(args)...);
-		[[maybe_unused]] const auto hash = Hash{}(obj);
+		[[maybe_unused]] auto hash = hash_pieces{hasher(obj)};
+
+		while (hash) {
+			const auto bitmap = bitmap_view{0xAAAAAAAAu};
+			const auto piece = hash.front();
+			const auto [position, exists] = bitmap[piece];
+			std::cout << piece << " -> [position: " << position << ", exists: " << (exists ? "yes" : "no") << "]\n";
+
+			if (!exists) {
+				std::cout << "early exit.\n";
+				break;
+			}
+
+			hash = hash.pop();
+		}
+
 		return {};
 	}
 
 	constexpr iterator find(const hamt::needle_for<T, EqualityCompare, Hash> auto & key) {
+		return {};
+	}
+
+	constexpr const_iterator find(const hamt::needle_for<T, EqualityCompare, Hash> auto & key) const {
 		return {};
 	}
 
