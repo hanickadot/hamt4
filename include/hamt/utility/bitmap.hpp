@@ -33,7 +33,7 @@ struct record_info {
 	bool exists;
 };
 
-template <typename T = uint32_t> struct basic_bitmap_view {
+template <std::unsigned_integral T = uint32_t> struct basic_bitmap_view {
 	using value_type = T;
 
 	value_type value{};
@@ -63,6 +63,8 @@ template <typename T = uint32_t> struct basic_bitmap_view {
 		return !empty();
 	}
 };
+
+template <unsigned Bits> using bitmap_view_for_pieces = basic_bitmap_view<bits_to_bitmap_t<Bits>>;
 
 } // namespace hamt::internal
 

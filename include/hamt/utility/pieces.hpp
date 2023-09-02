@@ -1,11 +1,12 @@
 #ifndef HAMT_UTILITY_PIECES_HPP
 #define HAMT_UTILITY_PIECES_HPP
 
+#include <concepts>
 #include <cstdint>
 
 namespace hamt::internal {
 
-template <typename HashT = uint32_t, unsigned Bits = 5> struct basic_hash_pieces {
+template <std::unsigned_integral HashT = uint32_t, unsigned Bits = 5> struct basic_hash_pieces {
 	static_assert(Bits <= 8u);
 	static_assert(Bits > 0u);
 
