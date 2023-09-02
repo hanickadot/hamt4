@@ -22,7 +22,7 @@ function(add_coverage TARGET_NAME)
 	add_custom_command(OUTPUT ${INDEX_HTML}
 		COMMAND LLVM_PROFILE_FILE=${TARGET_NAME}.profraw $<TARGET_FILE:${TARGET_NAME}> 
 		COMMAND llvm-profdata merge -sparse ${TARGET_NAME}.profraw -o ${TARGET_NAME}.profdata
-		COMMAND llvm-cov show $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata "-ignore-filename-regex=\"(tests/.*)\"" -format html -output-dir ${INDEX_DIR} -show-instantiations=true -show-line-counts -Xdemangler c++filt -Xdemangler -n -show-branches=percent -path-equivalence=/,${CMAKE_SOURCE_DIR} -tab-size=4
+		COMMAND llvm-cov show $<TARGET_FILE:${TARGET_NAME}> -instr-profile=${TARGET_NAME}.profdata "-ignore-filename-regex=\"(tests/.*|.*/assert.hpp)\"" -format html -output-dir ${INDEX_DIR} -show-instantiations=true -show-line-counts -Xdemangler c++filt -Xdemangler -n -show-branches=percent -path-equivalence=/,${CMAKE_SOURCE_DIR} -tab-size=4
 		COMMAND cd ${CMAKE_BINARY_DIR} && zip -q -r -9 code-coverage-${TARGET_NAME}.zip report-coverage-${TARGET_NAME}
 		MAIN_DEPENDENCY ${TARGET_NAME}
 		COMMENT "Running ${TARGET_NAME} for code-coverage report..."
