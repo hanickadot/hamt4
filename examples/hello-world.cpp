@@ -10,6 +10,6 @@ int main() {
 	s.emplace("hello there");
 	s.find("hello world"sv);
 
-	for (const auto & record: s) {
+	for ([[maybe_unused]] const auto & record: s) {
 	}
 }

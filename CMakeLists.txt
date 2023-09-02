@@ -6,9 +6,15 @@ if (PROJECT_IS_TOP_LEVEL)
 	if (APPLE)
 		set(CMAKE_OSX_DEPLOYMENT_TARGET "13.3")
 	endif() 
+
+	list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 	
+	include(colors)
+	include(pedantic)
+	include(coverage)
+
 	add_subdirectory(examples)
-  add_subdirectory(tests)
+	add_subdirectory(tests)
 endif()
 
 add_library(hamt INTERFACE)

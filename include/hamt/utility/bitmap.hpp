@@ -2,6 +2,7 @@
 #define HAMT_UTILITY_BITMAP_HPP
 
 #include <bit>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
 
@@ -34,6 +35,7 @@ struct record_info {
 
 template <typename T = uint32_t> struct basic_bitmap_view {
 	using value_type = T;
+
 	value_type value{};
 
 	static constexpr unsigned bits_available = sizeof(value_type) * 8u;
